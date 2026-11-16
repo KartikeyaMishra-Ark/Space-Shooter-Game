@@ -78,7 +78,79 @@ function drawPlayer() {
     ctx.restore();
 }
 
+const enemies = []
+
+function spawnEnemy() {
+    enemies.push({
+        x: Math.random() * (WIDTH - 60) + 30,
+        y: -40,
+        width: 35,
+        height: 35,
+        speed: Math.random() * 2 + 2,
+        health: 1
+    })
+}       
+
+function drawEnemies() {
+    enemies.forEach(enemy => {
+        ctx.save();
+
+        ctx.translate(enemy.x, enemy.y);
+
+        ctx.shadowBlur = 18
+
+        ctx.shadowColor = "#ff245c"
+        ctx.beginPath();
+        ctx.moveTo(0, 22)
+        ctx.lineTo(20, -15);
+        ctx.lineTo(0, -8)
+        ctx.lineTo(-20, -15);
+        ctx.closePath();
+
+        ctx.fillStyle = "#ff245c"
+        ctx.fill();
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#ff9ab5"
+        ctx.stroke();
+
+        ctx.restore();
+    })
+}
+
+
+function updateEnemies() {
+    enemies.forEach((enemy, index) => {
+        enemy.y += enemy.speed;
+
+        if (enemy.y > HEIGHT + 40) {
+            enemies.splice(index, 1);
+        }
+    })
+}
+
+function checkCollisions() {
+    bullets.forEach((bullet, bIndex) => {
+        enemies.forEach((enemy, eIndex) => {
+
+            const hit =
+                bullet.x > enemy.x - enemy.width / 2 &&
+                bullet.x < enemy.x + enemy.width / 2 &&
+                bullet.y > enemy.y - enemy.height / 2 &&
+                bullet.y < enemy.y + enemy.height / 2;
+
+            if (hit) {
+                bullets.splice(bIndex, 1)
+                enemies.splice(eIndex, 1)
+            }
+        })
+    })
+}
+
 const keys = {};
+
+
+
 
 document.addEventListener("keydown", e => {
     keys[e.key.toLowerCase()] = true;
@@ -115,7 +187,7 @@ document.addEventListener("keydown", e => {
         shoot();
     }
 })
-const bullets = [];
+const bullets = []
 
 function shoot() {
     bullets.push({
@@ -168,7 +240,15 @@ function gameLoop() {
     drawPlayer();
     updateBullets();
     drawBullets();
+    updateEnemies();
+    checkCollisions();
+    drawEnemies();
     requestAnimationFrame(gameLoop);
 }
+
+setInterval(() => {
+    spawnEnemy();
+}, 1200);
+
 
 gameLoop();
