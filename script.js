@@ -20,11 +20,11 @@ let volleyShotDelay = 12;
 const ENEMY_TYPES = {
 
     scout: {
-        health: 1,
+        health: 2,
         attack: "formation",
         bulletSpeed:3.5,
-        cooldownMin: 150,
-        cooldownMax:220,
+        cooldownMin: 46,
+        cooldownMax:75,
         score: 100,
         diveRate: 0.025
     },
@@ -32,30 +32,30 @@ const ENEMY_TYPES = {
 
 
     striker: {
-        health: 2,
+        health: 3,
         attack: "targeted",
         bulletSpeed: 4.2,
-        cooldownMin: 170,
-        cooldownMax: 240,
+        cooldownMin: 55,
+        cooldownMax: 85,
         score: 150,
         diveRate: 0.022
     },
 
     bomber: {
-        health: 3,
+        health: 5,
         attack: "spread",
         bulletSpeed:3.3,
-        cooldownMin: 220,
-        cooldownMax:300,
+        cooldownMin: 80,
+        cooldownMax:140,
         score:200,
         diveRate: 0.018
     },
     diver: {
-        health: 2,
+        health: 3,
         attack: "dive",
         bulletSpeed: 0,
-        cooldownMin: 200,
-        cooldownMax: 300,
+        cooldownMin: 150,
+        cooldownMax: 250,
         score: 175,
         diveRate:0.018
     }
@@ -76,24 +76,30 @@ function getEnemyType(row, col) {
     if (currentWave <= 4) {
         if (row === 0) return "bomber";
 
-        return col % 3 === 0
+        return col % 4 === 0
             ? "diver"
-            : "striker";
+            : col % 2 === 0
+                ? "striker"
+                : "scout";
     }
 
     if (currentWave <= 6) {
         if (row === 0) return "bomber";
 
-        return col % 2 === 0
+        return col % 5 === 0
             ? "diver"
-            : "striker";
+            : col % 2 === 0
+                ? "striker"
+                : "scout";
     }
 
     if (row === 0) return "bomber";
 
-    return col % 3 === 0
+    return col % 5 === 0
         ? "diver"
-        : "bomber";
+        : col % 2 === 0
+            ? "striker"
+            : "scout";
 }
 
 for (let i = 0; i < 150; i++) {
@@ -173,74 +179,113 @@ function drawScore() {
 
     ctx.restore();
 }
-
 function spawnFormation() {
+
     const rows = 4;
     const columns = 7;
 
-    const enemyHealth = Math.min(
-        1 + Math.floor((currentWave - 1) / 2),
-        6
-    );
     const spacingX = 85;
     const spacingY = 75;
 
     const startX = (WIDTH - (columns - 1) * spacingX) / 2;
 
+    const healthBonus = Math.floor((currentWave - 1) / 3);
+
     for (let row = 0; row < rows; row++) {
+
         for (let col = 0; col < columns; col++) {
-        const targetX = startX + col * spacingX;
-        const targetY = 100 + row * spacingY;
+
+            const targetX = startX + col * spacingX;
+            const targetY = 100 + row * spacingY;
+
+            const typeName = getEnemyType(row, col);
+            const type = ENEMY_TYPES[typeName];
+
+            const health = Math.min(
+                type.health + healthBonus,
+                8
+            );
 
             const patterns = ["swoop", "diagonal", "zigzag"];
+
             const pattern = patterns[col % patterns.length];
 
             enemies.push({
+
+                type: typeName,
+
                 x: targetX,
                 y: -100 - row * 65,
+
                 startX: targetX,
-            startY: -100 - row * 65,
-            targetX: targetX,
-            targetY: targetY,
-            entrancePattern: pattern,
-            entranceProgress: 0,
-            entranceDelay: Math.random() * 60,
-            width: 35,
-            height: 35,
-            health: enemyHealth,
-            maxHealth: enemyHealth,
-            hitFlash: 0,
-            hitRecoil: 0,
-            row: row,
-            col: col,
-            speed: 2,
-            entered: false,
-            entrySpeed: 2,
-            attackPattern: currentWave < 3 ? "formation" :
-                currentWave < 4
-                    ? (Math.random() < 0.5 ? "formation" : "targeted")
-                    : ["formation", "targeted", "dive"][
-                        Math.floor(Math.random() * 3)
-                    ],
+                startY: -100 - row * 65,
+                formationX: targetX,
+                formationY: targetY,
 
-            diveProgress: null,
-            diveStartX: 0,
-            diveStartY: 0,
-            diveTargetX: 0,
-            diveTargetY: 0,
+                targetX: targetX,
+                targetY: targetY,
 
-            attackCooldown: Math.random() * 120 + 100        })
+                entrancePattern: pattern,
+                entranceProgress: 0,
+                entranceDelay: Math.random() * 60,
+
+                width: 35,
+                height: 35,
+                health: health,
+                maxHealth: health,
+                hitFlash: 0,
+                hitRecoil: 0,
+                row: row,
+                col: col,
+                entered: false,
+                speed: 2,
+                diveRate: type.diveRate,
+                attackPattern: type.attack,
+                bulletSpeed: type.bulletSpeed,
+                attackCooldown:
+                    Math.random() *
+                    (type.cooldownMax - type.cooldownMin) +
+                    type.cooldownMin,
+
+                scoreValue: type.score,
+
+                
+                diveProgress: null,
+                diveReturning: false,
+
+                diveStartX: 0,
+                diveStartY: 0,
+                diveTargetX: 0,
+                diveTargetY: 0
+
+            })
+
         }
     }
-} 
-
+}
 function startNextWave() {
     currentWave++;
-    waveState = "active";
+
+    waveState = "active"
+
+    formationSpeed = Math.min(
+        3.5 + (currentWave - 1) * 0.15,
+        5.5
+    )
+
+    formationDirection = 1;
+
+    volleyCooldown = 150;
+    volleyShotDelay = 12;
+    volleyEnemies = [];
+    volleyActive = false
+    volleyIndex = 0;
+
+    
+    enemyBullets.length = 0
     spawnFormation();
+
 }
-
-
 function drawStars() {
     ctx.fillStyle = "#ffffff";
 
@@ -318,7 +363,6 @@ function drawPlayer() {
 
     ctx.translate(player.x, player.y);
 
-   
     ctx.shadowBlur = 20;
     ctx.shadowColor = "#00eaff";
       
@@ -327,7 +371,7 @@ function drawPlayer() {
     ctx.lineTo(20, 20)
     ctx.lineTo(0, 12)
     ctx.lineTo(-20, 20)
-    ctx.closePath();
+    ctx.closePath(); 
 
     ctx.fillStyle = "#00c8ff"
     ctx.fill();
@@ -434,7 +478,7 @@ function drawEnemies() {
 
         ctx.restore();
     })
-}                       
+}
 
 function damagePlayer() {
     if (player.invulnerability > 0 || gameOver) return;
@@ -448,15 +492,74 @@ function damagePlayer() {
         gameOver = true;
     }
 }
+function fireEnemyAttack(enemy) {
+
+    const dx = player.x - enemy.x;
+    const dy = player.y - enemy.y;
+
+    const angle = Math.atan2(dy, dx);
+
+    const speed = enemy.bulletSpeed;
+
+    function createBullet(angleOffset) {
+
+        const bulletAngle = angle + angleOffset;
+
+        enemyBullets.push({
+
+            x: enemy.x,
+            y: enemy.y + 20,
+
+            vx: Math.cos(bulletAngle) * speed,
+            vy: Math.sin(bulletAngle) * speed,
+
+            width: 6,
+            height: 12
+
+        })
+    }
+    if (enemy.attackPattern === "formation") {
+
+        enemyBullets.push({
+
+            x: enemy.x,
+            y: enemy.y + 20,
+
+            vx: 0,
+            vy: speed,
+
+            width: 6,
+            height: 12
+
+        })
+    }
+
+    else if (enemy.attackPattern === "targeted") {
+
+        createBullet(0);
+
+    }
+
+    else if (enemy.attackPattern === "spread") {
+
+        createBullet(-0.3)
+        createBullet(0)
+        createBullet(0.3)
+
+    }
+
+
+
+}
 function startEnemyVolley() {
 
-    if (volleyActive) return;
+    if (volleyActive || currentWave < 3) return;
 
     const readyEnemies = enemies.filter(enemy =>
         enemy.entered &&
         enemy.attackPattern !== "dive" &&
         enemy.diveProgress === null
-    )
+    );
 
     if (readyEnemies.length === 0) return;
 
@@ -464,63 +567,60 @@ function startEnemyVolley() {
 
     volleyEnemies = readyEnemies
         .filter(enemy => enemy.row === selectedRow)
-        .sort((a, b) => a.x - b.x)
+        .sort((a, b) => a.x - b.x);
 
     if (volleyEnemies.length === 0) return;
 
     volleyIndex = 0;
+    volleyShotDelay = 12;
     volleyActive = true;
+
 }
 
 
 function updateEnemyVolley() {
+    if (currentWave < 3) return;
 
     if (!volleyActive) {
-        volleyCooldown--;
+
+        volleyCooldown--
 
         if (volleyCooldown <= 0) {
             startEnemyVolley();
-            volleyCooldown = 240;
+            volleyCooldown = 150;
         }
-
         return;
     }
-
-    volleyShotDelay--
+    volleyShotDelay--;
 
     if (volleyShotDelay <= 0) {
 
         const enemy = volleyEnemies[volleyIndex];
 
-        if (enemy && enemies.includes(enemy)) {
+        if (
+            enemy &&
+            enemies.includes(enemy) &&
+            enemy.diveProgress === null
+        ) {
 
-            const dx = player.x - enemy.x;
-            const dy = player.y - enemy.y;
-            const distance = Math.hypot(dx, dy);
+            fireEnemyAttack(enemy);
 
-            const speed = 4;
+            enemy.attackCooldown = Math.max(
+                enemy.attackCooldown,
+                120
+            )
 
-            enemyBullets.push({
-                x: enemy.x,
-                y: enemy.y + 20,
-                vx: (dx / distance) * speed,
-                vy: (dy / distance) * speed,
-                width: 6,
-                height: 12
-            })
         }
 
         volleyIndex++;
-        volleyShotDelay = 12;
+        volleyShotDelay = 8
 
         if (volleyIndex >= volleyEnemies.length) {
             volleyActive = false;
-            volleyCooldown = 240
+            volleyCooldown = 150
         }
     }
 }
-
-
 
 function updateEnemies() {
     if (enemies.length === 0) {
@@ -529,7 +629,7 @@ function updateEnemies() {
 
             setTimeout(() => {
                 startNextWave();
-            }, 2000)
+            }, 2000);
         }
 
         return;
@@ -541,101 +641,161 @@ function updateEnemies() {
     enemies.forEach(enemy => {
         if (!enemy.entered) return;
 
-        leftEdge = Math.min(leftEdge, enemy.x - enemy.width / 2);
-        rightEdge = Math.max(rightEdge, enemy.x + enemy.width / 2);
+        leftEdge = Math.min(leftEdge, enemy.formationX - enemy.width / 2);
+        rightEdge = Math.max(rightEdge, enemy.formationX + enemy.width / 2);
+
     })
 
     if (formationReady) {
         if (rightEdge >= WIDTH - 20) {
             formationDirection = -1;
-        } else if (leftEdge <= 20) {
+        }
+
+        else if (leftEdge <= 20) {
             formationDirection = 1;
         }
     }
 
     enemies.forEach(enemy => {
 
-        if (enemy.hitFlash > 0) {
-            enemy.hitFlash--
-        }
-
-        if (enemy.hitRecoil > 0) {
-            enemy.hitRecoil--
-        }
+        if (enemy.hitFlash > 0) enemy.hitFlash--;
+        if (enemy.hitRecoil > 0) enemy.hitRecoil--;
 
         if (!enemy.entered) {
 
-        if (enemy.entranceDelay > 0) {
-            enemy.entranceDelay--;
+            if (enemy.entranceDelay > 0) {
+                enemy.entranceDelay--;
+                return;
+            }
+
+            enemy.entranceProgress = Math.min(
+                enemy.entranceProgress + 0.012,
+                1
+            );
+
+            const t = enemy.entranceProgress;
+            const eased = 1 - Math.pow(1 - t, 3);
+
+            if (enemy.entrancePattern === "swoop") {
+
+                enemy.x = enemy.startX +
+                    (enemy.targetX - enemy.startX) * eased +
+                    Math.sin(t * Math.PI * 2) * 20 * (1 - t);
+
+                enemy.y = enemy.startY +
+                    (enemy.targetY - enemy.startY) * eased;
+
+            }
+
+            else if (enemy.entrancePattern === "diagonal") {
+
+                enemy.x = enemy.startX +
+                    (enemy.targetX - enemy.startX) * eased;
+
+                enemy.y = enemy.startY +
+                    (enemy.targetY - enemy.startY) * eased;
+
+            }
+
+            else if (enemy.entrancePattern === "zigzag") {
+
+                enemy.x = enemy.startX +
+                    (enemy.targetX - enemy.startX) * eased +
+                    Math.sin(t * Math.PI * 5) * 15 * (1 - t);
+
+                enemy.y = enemy.startY +
+                    (enemy.targetY - enemy.startY) * eased;
+
+            }
+
+            if (t >= 1) {
+
+                enemy.x = enemy.targetX;
+                enemy.y = enemy.targetY;
+
+                enemy.formationX = enemy.targetX;
+                enemy.formationY = enemy.targetY;
+
+                enemy.entered = true;
+
+            }
+
             return;
         }
 
-        enemy.entranceProgress = Math.min(
-            enemy.entranceProgress + 0.012,
-            1
-        )
+        if (!formationReady) return;
 
-        const t = enemy.entranceProgress;
+        enemy.formationX += formationSpeed * formationDirection;
 
-        const eased = 1 - Math.pow(1 - t, 3);
+        if (enemy.diveProgress !== null) {
 
-        if (enemy.entrancePattern === "swoop") {
-            enemy.x = enemy.startX +
-                (enemy.targetX - enemy.startX) * eased +
-                Math.sin(t * Math.PI * 2) * 20 * (1 - t);
+            const t = enemy.diveProgress;
 
-            enemy.y = enemy.startY +
-                (enemy.targetY - enemy.startY) * eased;
-
-        } else if (enemy.entrancePattern === "diagonal") {
-            enemy.x = enemy.startX +
-                (enemy.targetX - enemy.startX) * eased;
-
-            enemy.y = enemy.startY +
-                (enemy.targetY - enemy.startY) * eased;
-
-        } else if (enemy.entrancePattern === "zigzag") {
-            enemy.x = enemy.startX +
-                (enemy.targetX - enemy.startX) * eased +
-                Math.sin(t * Math.PI * 5) * 15 * (1 - t);
-
-            enemy.y = enemy.startY +
-                (enemy.targetY - enemy.startY) * eased;
-        }
-
-        if (t >= 1) {
-            enemy.x = enemy.targetX;
-            enemy.y = enemy.targetY;
-            enemy.entered = true;
-        }
-
-        } else if (formationReady) {
-
-            if (enemy.diveProgress !== null) {
+            if (!enemy.diveReturning) {
 
                 enemy.diveProgress = Math.min(
-                    enemy.diveProgress + 0.018,
+                    t + enemy.diveRate,
                     1
-                );
+                )
 
-                const t = enemy.diveProgress;
-                const arc = Math.sin(t * Math.PI);
+                const progress = enemy.diveProgress;
+
+                const arc = Math.sin(progress * Math.PI) * 45;
 
                 enemy.x = enemy.diveStartX +
-                    (enemy.diveTargetX - enemy.diveStartX) * arc;
+                    (enemy.diveTargetX - enemy.diveStartX) * progress +
+                    Math.sin(progress * Math.PI) * 35;
 
                 enemy.y = enemy.diveStartY +
-                    (enemy.diveTargetY - enemy.diveStartY) * arc;
+                    (enemy.diveTargetY - enemy.diveStartY) *
+                    Math.sin(progress * Math.PI / 2) +
+                    arc;
 
-                if (t >= 1) {
-                    enemy.x = enemy.diveStartX;
-                    enemy.y = enemy.diveStartY;
-                    enemy.diveProgress = null;
+                if (progress >= 1) {
+                    enemy.diveReturning = true;
                 }
 
-            } else {
-                enemy.x += formationSpeed * formationDirection;
             }
+
+            else {
+
+                enemy.diveProgress = Math.max(
+                    t - enemy.diveRate * 1.2,
+                    0
+                )
+
+                const progress = enemy.diveProgress;
+
+                const arc = Math.sin(progress * Math.PI) * 45;
+
+                enemy.x = enemy.formationX +
+                    (enemy.diveTargetX - enemy.formationX) * progress +
+                    Math.sin(progress * Math.PI) * 35;
+
+                enemy.y = enemy.formationY +
+                    (enemy.diveTargetY - enemy.formationY) *
+                    Math.sin(progress * Math.PI / 2) +
+                    arc;
+
+                if (progress <= 0) {
+
+                    enemy.x = enemy.formationX;
+                    enemy.y = enemy.formationY;
+
+                    enemy.diveProgress = null;
+                    enemy.diveReturning = false;
+
+                }
+
+            }
+
+        }
+
+        else {
+
+            enemy.x = enemy.formationX;
+            enemy.y = enemy.formationY;
+
         }
 
         enemy.attackCooldown--;
@@ -644,53 +804,48 @@ function updateEnemies() {
 
             if (
                 enemy.attackCooldown <= 0 &&
-                enemy.entered &&
                 enemy.diveProgress === null
             ) {
-                enemy.diveStartX = enemy.x
-                enemy.diveStartY = enemy.y
 
-                enemy.diveTargetX = player.x;
-                enemy.diveTargetY = player.y - 70;
+                enemy.diveStartX = enemy.x;
+                enemy.diveStartY = enemy.y;
 
-                enemy.diveProgress = 0
+                enemy.diveTargetX = Math.max(
+                    40,
+                    Math.min(WIDTH - 40, player.x)
+                );
 
-                enemy.attackCooldown = Math.random() * 220 + 240
+                enemy.diveTargetY = Math.max(
+                    enemy.formationY + 80,
+                    Math.min(player.y - 55, HEIGHT - 40)
+                );
+
+                enemy.diveProgress = 0;
+                enemy.diveReturning = false;
+
+                enemy.attackCooldown =
+                    Math.random() * 220 + 240;
+
             }
 
-            } else if (
-                enemy.attackCooldown <= 0 &&
-                enemy.entered &&
-                currentWave < 3
-            ) {
-            const dx = player.x - enemy.x
-            const dy = player.y - enemy.y
-
-            const distance = Math.hypot(dx, dy);
-            const speed = enemy.attackPattern === "targeted" ? 4 : 3.5;
-
-            enemyBullets.push({
-                x: enemy.x,
-                y: enemy.y + 20,
-
-                vx: enemy.attackPattern === "targeted"
-                    ? (dx / distance) * speed
-                    : 0,
-
-                vy: enemy.attackPattern === "targeted"
-                    ? (dy / distance) * speed
-                    : speed,
-
-                width: 6,
-                height: 12
-            })
-
-            enemy.attackCooldown = Math.random() * 120 + 100;
         }
+
+        else if (enemy.attackCooldown <= 0) {
+
+            fireEnemyAttack(enemy);
+
+            const type = ENEMY_TYPES[enemy.type];
+
+            enemy.attackCooldown =
+                Math.random() *
+                (type.cooldownMax - type.cooldownMin) +
+                type.cooldownMin
+
+        }
+
     })
 
 }
-
 function checkCollisions() {
 
     for (let b = bullets.length - 1; b >= 0; b--) {
@@ -718,9 +873,11 @@ function checkCollisions() {
                 hit = true;
 
                 if (enemy.health <= 0) {
-                    score += 100;
-                    createExplosion(enemy.x, enemy.y);
-                    enemies.splice(e, 1);
+
+                    score += enemy.scoreValue;
+
+                    createExplosion(enemy.x, enemy.y)
+                    enemies.splice(e, 1)
                 }
 
                 break;
@@ -759,9 +916,6 @@ function checkCollisions() {
 }
 
 const keys = {};
-
-
-
 function updateBullets() {
     for (let i = bullets.length - 1; i >= 0; i--) {
         const bullet = bullets[i];
