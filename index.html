@@ -1,16 +1,67 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space-Shooter</title>
+    <title>Tung Invaders</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <canvas id="gameCanvas" width="1000" height="700"></canvas>
-    
 
+    <div id="mainMenu">
+        <div class="menu-content">
 
+            <p class="eyebrow">ARCADE SPACE COMBAT</p>
+
+            <h1>TUNG <span>INVADERS</span></h1>
+
+            <p class="description">
+                Fight enemy waves. Survive as long as you can.
+            </p>
+
+            <div class="controls">
+                <div>
+                    <span class="control-key">W A S D</span>
+                    <span>MOVE</span>
+                </div>
+
+                <div>
+                    <span class="control-key">ARROWS</span>
+                    <span>MOVE</span>
+                </div>
+
+                <div>
+                    <span class="control-key">SPACE</span>
+                    <span>SHOOT</span>
+                </div>
+            </div>
+
+            <p class="section-label">SELECT DIFFICULTY</p>
+
+            <div class="difficulty-options">
+                <button class="difficulty-btn" data-difficulty="easy">
+                    EASY
+                </button>
+
+                <button class="difficulty-btn" data-difficulty="medium">
+                    MEDIUM
+                </button>
+
+                <button class="difficulty-btn" data-difficulty="hard">
+                    HARD
+                </button>
+
+                <button class="difficulty-btn selected" data-difficulty="extreme">
+                    EXTREME
+                </button>
+            </div>
+
+            <button id="startButton">START GAME</button>
+
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

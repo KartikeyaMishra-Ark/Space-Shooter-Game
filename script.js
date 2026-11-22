@@ -18,7 +18,6 @@ let volleyEnemies = [];
 let volleyIndex = 0;
 let volleyShotDelay = 12;
 
-let difficulty = DIFFICULTIES.extreme;
 const ENEMY_TYPES = {
 
     scout: {
@@ -89,6 +88,7 @@ const DIFFICULTIES = {
         playerLives: 3
     }
 }
+let difficulty = DIFFICULTIES.extreme;
 function getEnemyType(row, col) {
 
     if (currentWave === 1) {
@@ -1580,9 +1580,36 @@ function startGame() {
 
     spawnFormation();
 }
+const difficultyButtons = document.querySelectorAll(".difficulty-btn");
+
+difficultyButtons.forEach(button => {
+    button.addEventListener("click", () => {
+
+        selectedDifficulty = button.dataset.difficulty;
+
+        difficultyButtons.forEach(btn => {
+            btn.classList.remove("selected");
+        });
+
+        button.classList.add("selected");
+    })
+})
+
+document.getElementById("startButton").addEventListener("click", () => {
+    startGame();
+
+    document.getElementById("mainMenu").classList.add("hidden");
+})
 function gameLoop() {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
     drawStars();
+
+    if (gameState !== "playing") {
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
     movePlayer();
     drawPlayer();
     updateBullets();

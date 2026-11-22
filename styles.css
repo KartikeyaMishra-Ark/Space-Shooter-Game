@@ -13,6 +13,7 @@ body {
     align-items: center;
     background: #08090d;
     overflow: hidden;
+    font-family: Arial, sans-serif;
 }
 
 #gameCanvas {
@@ -21,13 +22,120 @@ body {
     box-shadow: 0 0 30px rgba(0, 200, 255, 0.08);
 }
                 
+#mainMenu {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(5, 7, 15, 0.88);
+    z-index: 10;
+}
+
+.menu-content {
+    width: 600px;
+    text-align: center;
+    padding: 40px;
+}
 
 
+h1 {
+    color: #ffffff;
+    font-size: 62px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-shadow: 0 0 25px rgba(0, 234, 255, 0.25);
+}
+h1 span {
+    color: #00eaff;
+}
+
+.description {
+    color: #9299ad;
+    font-size: 15px;
+    margin-top: 12px;
+}
 
 
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 35px;
+    margin: 45px 0;
+}
+.controls div {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    color: #777f96;
+    font-size: 11px;
+    letter-spacing: 2px;
+}
+.control-key {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 10px 13px;
+    border: 1px solid #30394e;
+    border-radius: 5px;
+    background: #111725;
+}
+.section-label {
+    color: #9299ad;
+    font-size: 12px;
+    letter-spacing: 3px;
+    margin-bottom: 18px;
+}
 
+.difficulty-options {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 35px;
+}
 
+.difficulty-btn {
+    padding: 12px 18px;
+    color: #9299ad;
+    background: #111725;
+    border: 1px solid #30394e;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+.difficulty-btn:hover {
+    border-color: #00eaff;
+    color: #ffffff;
+}
 
+.difficulty-btn.selected {
+    color: #00eaff;
+    border-color: #00eaff;
+    background: rgba(0, 234, 255, 0.1);
+    box-shadow: 0 0 15px rgba(0, 234, 255, 0.12);
+}
 
+#startButton {
+    width: 230px;
+    padding: 16px;
+    color: #08090d;
+    background: #00eaff;
+    border: none;
+    border-radius: 5px;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: 0.2s;
+}
 
-                        
+#startButton:hover {
+    background: #ffffff;
+    box-shadow: 0 0 25px rgba(0, 234, 255, 0.5);
+    transform: translateY(-2px);
+}
+
+#mainMenu.hidden {
+    display: none;
+}
