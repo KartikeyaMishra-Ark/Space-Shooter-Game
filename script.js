@@ -8,6 +8,7 @@ const HEIGHT = canvas.height;
 const stars = [];
 let score = 0;
 const particles = [];
+const laserImpacts = [];
 let formationDirection = 1;
 let formationSpeed = 3.5;
 let formationDrop = 35;
@@ -162,20 +163,36 @@ function drawScore() {
     ctx.font = "bold 22px Arial";
     ctx.fillStyle = "#00eaff";
     ctx.shadowBlur = 10;
-
-
-
-
     ctx.shadowColor = "#00eaff";
     ctx.textAlign = "left";
+    ctx.fillText(`SCORE: ${score}`, 25, 40);
 
-    ctx.fillText(`SCORE: ${score}`, 25, 40)
-
-    ctx.textAlign = "center"
-    ctx.fillText(`WAVE: ${currentWave}`, WIDTH / 2, 40)
+    ctx.textAlign = "center";
+    ctx.fillText(`WAVE: ${currentWave}`, WIDTH / 2, 40);
 
     ctx.textAlign = "right";
-    ctx.fillText(`LIVES: ${player.lives}`, WIDTH - 25, 40)
+    ctx.fillText(`LIVES: ${player.lives}`, WIDTH - 25, 40);
+
+    const weaponColor = equippedWeapon === "red"
+        ? "#ff3333"
+        : "#ffdf32";
+
+    ctx.fillStyle = weaponColor;
+    ctx.shadowColor = weaponColor;
+
+    ctx.textAlign = "left";
+    ctx.fillText(
+        `WEAPON: ${equippedWeapon.toUpperCase()}`,
+        25,
+        75
+    )
+
+    ctx.textAlign = "right";
+    ctx.fillText(
+        `LEVEL: ${weaponLevel}`,
+        WIDTH - 25,
+        75
+    )
 
     ctx.restore();
 }
@@ -189,8 +206,7 @@ function spawnFormation() {
 
     const startX = (WIDTH - (columns - 1) * spacingX) / 2;
 
-    const healthBonus = Math.floor((currentWave - 1) / 3);
-
+const healthBonus = Math.floor((currentWave - 1) / 2);
     for (let row = 0; row < rows; row++) {
 
         for (let col = 0; col < columns; col++) {
@@ -203,7 +219,7 @@ function spawnFormation() {
 
             const health = Math.min(
                 type.health + healthBonus,
-                8
+                15
             );
 
             const patterns = ["swoop", "diagonal", "zigzag"];
@@ -238,6 +254,7 @@ function spawnFormation() {
                 row: row,
                 col: col,
                 entered: false,
+                invulnerability: 1,
                 speed: 2,
                 diveRate: type.diveRate,
                 attackPattern: type.attack,
@@ -406,8 +423,53 @@ function spawnEnemy() {
         health: 1
     })
 }       
+
+
+function drawEnemyShield(enemy) {
+
+    if (enemy.invulnerability <= 0) return;
+
+    ctx.save();
+
+    ctx.translate(enemy.x, enemy.y)
+
+    ctx.globalAlpha = Math.min(
+        enemy.invulnerability / 20,
+        0.8
+    )
+
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = "#00aaff";
+
+    ctx.beginPath();
+    ctx.arc(0, 0, 27, 0, Math.PI * 2);
+
+    ctx.strokeStyle = "#00c8ff";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(0, 0, 25, 0, Math.PI * 2);
+
+    ctx.fillStyle = "rgba(0, 170, 255, 0.15)";
+    ctx.fill();
+
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = "#a5f3ff";
+
+    ctx.beginPath();
+    ctx.arc(0, -25, 2, 0, Math.PI * 2);
+    ctx.arc(25, 0, 2, 0, Math.PI * 2);
+    ctx.arc(0, 25, 2, 0, Math.PI * 2)
+    ctx.arc(-25, 0, 2, 0, Math.PI * 2)
+    ctx.fill();
+
+    ctx.restore();
+}
+
 function drawEnemies() {
     enemies.forEach(enemy => {
+        drawEnemyShield(enemy);
         ctx.save();
 
         const recoil = enemy.hitRecoil > 0
@@ -485,6 +547,7 @@ function damagePlayer() {
 
     player.lives--;
     player.invulnerability = 90;
+    weaponLevel = Math.max(1, weaponLevel - 2);
 
     createExplosion(player.x, player.y);
 
@@ -635,6 +698,11 @@ function updateEnemies() {
         return;
     }
     const formationReady = enemies.every(enemy => enemy.entered);
+    if (formationReady) {
+        enemies.forEach(enemy => {
+            enemy.invulnerability = 0;
+        })
+    }
     let leftEdge = Infinity;
     let rightEdge = -Infinity;
 
@@ -846,6 +914,37 @@ function updateEnemies() {
     })
 
 }
+
+function createWeaponDrop(x, y) {
+
+    const roll = Math.random();
+
+    let type;
+
+    if (roll < 0.02) {
+        type = "red";
+    }
+    else if (roll < 0.04) {
+        type = "laser";
+    }
+
+    else if (roll < 0.15) {
+        type = "power";
+    }
+
+    else {
+        return;
+    }
+
+    weaponDrops.push({
+        x: x,
+        y: y,
+        width: 18,
+        height:18,
+        speed: 2.5,
+        type: type
+    })
+}
 function checkCollisions() {
 
     for (let b = bullets.length - 1; b >= 0; b--) {
@@ -856,6 +955,7 @@ function checkCollisions() {
         for (let e = enemies.length - 1; e >= 0; e--) {
 
             const enemy = enemies[e];
+            if (enemy.invulnerability > 0) continue;
 
             const collision =
                 bullet.x > enemy.x - enemy.width / 2 &&
@@ -865,20 +965,23 @@ function checkCollisions() {
 
             if (collision) {
 
-                enemy.health--;
+                enemy.health-= bullet.damage || 1;
                 enemy.hitFlash = 8;
                 enemy.hitRecoil = 8;
 
                 bullets.splice(b, 1);
                 hit = true;
 
-                if (enemy.health <= 0) {
+            if (enemy.health <= 0) {
 
-                    score += enemy.scoreValue;
+                score += enemy.scoreValue;
 
-                    createExplosion(enemy.x, enemy.y)
-                    enemies.splice(e, 1)
-                }
+                createExplosion(enemy.x, enemy.y);
+
+                createWeaponDrop(enemy.x, enemy.y);
+
+                enemies.splice(e, 1)
+            }
 
                 break;
             }
@@ -901,7 +1004,34 @@ function checkCollisions() {
             damagePlayer();
         }
     }
+    for (let i = weaponDrops.length - 1; i >= 0; i--) {
 
+        const drop = weaponDrops[i]
+
+        const collected =
+            Math.abs(player.x - drop.x) <
+                (player.width + drop.width) / 2 &&
+            Math.abs(player.y - drop.y) <
+                (player.height + drop.height) / 2;
+
+        if (collected) {
+
+        if (drop.type === "red") {
+
+            equippedWeapon = "red";
+
+        }
+
+        else if (drop.type === "laser") {
+
+            equippedWeapon = "laser";
+        }
+        else if (drop.type === "power") {
+            weaponLevel = Math.min(weaponLevel + 1, 5)
+        }
+            weaponDrops.splice(i, 1);
+        }
+    }
    
     enemies.forEach(enemy => {
 
@@ -920,9 +1050,14 @@ function updateBullets() {
     for (let i = bullets.length - 1; i >= 0; i--) {
         const bullet = bullets[i];
 
-        bullet.y -= bullet.speed;
+        bullet.x += bullet.vx;
+        bullet.y -= bullet.vy;
 
-        if (bullet.y < 0) {
+        if (
+            bullet.y < -20 ||
+            bullet.x < -20 ||
+            bullet.x > WIDTH + 20
+        ) {
             bullets.splice(i, 1);
         }
     }
@@ -966,6 +1101,7 @@ function movePlayer() {
 }
 document.addEventListener("keydown", e => {
     keys[e.key.toLowerCase()] = true;
+    if (e.repeat) return;
 
     if (e.key === " ") {
         shoot();
@@ -973,32 +1109,282 @@ document.addEventListener("keydown", e => {
 })
 const bullets = []
 const enemyBullets = [];
-function shoot() {
-    bullets.push({
-        x: player.x,
-        y: player.y - 25,
-        width: 4,
-        height: 18,
-        speed: 10
-    })
+const laserBeams = [];
+
+const weaponDrops = [];
+
+let weaponLevel = 1;
+let equippedWeapon = "red";
+
+const weapons = {
+    red: {},
+    laser: {}
 }
 
+function shoot() {
+    const level = weaponLevel;
+
+    if (equippedWeapon === "red") {
+
+        const projectileCount = Math.min(level, 4);
+
+        const spread = level >= 4 ? 0.28 :
+                       level >= 3 ? 0.18 :
+                       level >= 2 ? 0.06 : 0;
+
+        const damage = level >= 5 ? 2 : 1;
+
+        for (let i = 0; i < projectileCount; i++) {
+
+            const angle = projectileCount === 1
+                ? 0
+                : -spread + (2 * spread * i) /
+                  (projectileCount - 1);
+
+            bullets.push({
+                x: player.x,
+                y: player.y - 25,
+
+                width: 4,
+                height: 18,
+
+                vx: Math.sin(angle) * 10,
+                vy: Math.cos(angle) * 10,
+                damage: damage
+            })
+        }
+    }
+  
+
+    else if (equippedWeapon === "laser") {
+        fireLaser();
+    }
+    
+}
+
+
+function fireLaser() {
+    const damageByLevel = [0, 3, 4, 5, 6, 8];
+    const beamX = player.x;
+    const beamStart = player.y - 25;
+
+    let target = null;
+
+    enemies.forEach(enemy => {
+        const overlapsBeam =
+            Math.abs(enemy.x - beamX) < enemy.width / 2 + 5;
+
+        if (
+            overlapsBeam &&
+            enemy.y < beamStart &&
+            (!target || enemy.y > target.y)
+        ) {
+            target = enemy;
+        }
+    })
+
+    const beamEnd = target
+        ? target.y + target.height / 2
+        : 0;
+
+    laserBeams.push({
+        x: beamX,
+        startY: beamStart,
+        endY: beamEnd,
+        life: 10,
+        maxLife: 10
+    });
+
+    if (target && target.invulnerability <= 0) {
+        target.health -= damageByLevel[weaponLevel];
+        target.hitFlash = 8;
+        target.hitRecoil = 8;
+
+        if (target.health <= 0) {
+            score += target.scoreValue;
+            createExplosion(target.x, target.y);
+            createWeaponDrop(target.x, target.y);
+
+            const index = enemies.indexOf(target);
+            if (index !== -1) {
+                enemies.splice(index, 1);
+            }
+        }
+    }
+}
+function createLaserImpact(x, y) {
+    laserImpacts.push({
+        x,
+        y,
+        life: 12,
+        maxLife: 12,
+        radius: 5
+    })
+    for (let i = 0; i < 16; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 5 + 2;
+
+        particles.push({
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            radius: Math.random() * 3 + 1,
+            life: 1,
+            color: "#ffe45c"
+        })
+    }
+}
 
 
 function drawBullets() {
     bullets.forEach(bullet => {
         ctx.save();
 
-        ctx.shadowBlur = 15
-        ctx.shadowColor = "#ff2020"
+        const isYellow = bullet.type === "laser";
 
-        ctx.fillStyle = "#ff3333";
+        const color = isYellow ? "#ffdf32" : "#ff3333";
+
+        ctx.shadowBlur = isYellow ? 22 : 15;
+        ctx.shadowColor = color;
+        ctx.fillStyle = color;
+
         ctx.fillRect(
             bullet.x - bullet.width / 2,
             bullet.y - bullet.height / 2,
             bullet.width,
             bullet.height
         )
+
+        ctx.restore()
+    })
+}
+function updateLaserBeams() {
+    for (let i = laserBeams.length - 1; i >= 0; i--) {
+        laserBeams[i].life--;
+
+        if (laserBeams[i].life <= 0) {
+            laserBeams.splice(i, 1);
+        }
+    }
+}
+
+function drawLaserBeams() {
+    laserBeams.forEach(beam => {
+        ctx.save();
+
+        const alpha = beam.life / beam.maxLife;
+        const length = beam.startY - beam.endY;
+
+        ctx.globalAlpha = alpha;
+
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = "#ffbd32";
+        ctx.strokeStyle = "#ffbd32";
+        ctx.lineWidth = 22;
+
+        ctx.beginPath();
+        ctx.moveTo(beam.x, beam.startY)
+        ctx.lineTo(beam.x, beam.endY);
+        ctx.stroke();
+
+        ctx.shadowBlur = 15
+        ctx.strokeStyle = "#fff000";
+        ctx.lineWidth = 10;
+
+        ctx.beginPath();
+        ctx.moveTo(beam.x, beam.startY);
+        ctx.lineTo(beam.x, beam.endY);
+        ctx.stroke();
+
+        ctx.shadowBlur = 12
+        ctx.shadowColor = "#ffffff"
+        ctx.strokeStyle = "#ffffff"
+        ctx.lineWidth = 3
+
+        ctx.beginPath();
+        ctx.moveTo(beam.x, beam.startY)
+        ctx.lineTo(beam.x, beam.endY)
+        ctx.stroke();
+        if (beam.endY > 0) {
+            ctx.shadowBlur = 25;
+            ctx.fillStyle = "#ffffff"
+
+            ctx.beginPath();
+            ctx.arc(
+                beam.x,
+                beam.endY,
+                9 * alpha,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+        }
+
+        ctx.restore();
+    })
+}
+function updateWeaponDrops() {
+
+    for (let i = weaponDrops.length - 1; i >= 0; i--) {
+
+        const drop = weaponDrops[i];
+
+        drop.y += drop.speed;
+
+        if (drop.y > HEIGHT + 20) {
+            weaponDrops.splice(i, 1);
+        }
+    }
+}
+
+function drawWeaponDrops() {
+
+    weaponDrops.forEach(drop => {
+
+        ctx.save();
+
+        if (drop.type === "power") {
+
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = "#00aaff";
+            ctx.fillStyle = "#008cff";
+
+            ctx.beginPath();
+            ctx.arc(drop.x, drop.y, 12, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 3;
+
+            ctx.beginPath();
+            ctx.moveTo(drop.x - 6, drop.y);
+            ctx.lineTo(drop.x + 6, drop.y);
+            ctx.moveTo(drop.x, drop.y - 6);
+            ctx.lineTo(drop.x, drop.y + 6);
+            ctx.stroke();
+
+        }
+
+        else {
+
+            const color = drop.type === "red"
+                ? "#ff3333"
+                : "#ffdf32";
+
+            ctx.shadowBlur = 18;
+            ctx.shadowColor = color;
+            ctx.fillStyle = color;
+
+            ctx.fillRect(
+                drop.x - drop.width / 2,
+                drop.y - drop.height / 2,
+                drop.width,
+                drop.height
+            )
+
+        }
 
         ctx.restore();
     })
@@ -1010,8 +1396,12 @@ function gameLoop() {
     drawPlayer();
     updateBullets();
     drawBullets();
+    updateLaserBeams();
+    drawLaserBeams();
     updateEnemyBullets();
     drawEnemyBullets();
+    updateWeaponDrops();
+    drawWeaponDrops();
     updateEnemies();
     updateEnemyVolley();
     checkCollisions();
