@@ -18,6 +18,7 @@ let volleyEnemies = [];
 let volleyIndex = 0;
 let volleyShotDelay = 12;
 
+let difficulty = DIFFICULTIES.extreme;
 const ENEMY_TYPES = {
 
     scout: {
@@ -61,7 +62,33 @@ const ENEMY_TYPES = {
         diveRate:0.018
     }
 }
+const DIFFICULTIES = {
+    easy: {
+        enemyHealth: 0.65,
+        enemySpeed: 0.65,
+        enemyAttackRate: 1.7,
+        playerLives: 5
+    },
 
+    medium: {
+        enemyHealth: 0.8,
+        enemySpeed: 0.8,
+        enemyAttackRate: 1.3,
+        playerLives: 4
+    },
+    hard: {
+        enemyHealth: 0.9,
+        enemySpeed: 0.9,
+        enemyAttackRate: 1.15,
+        playerLives: 3
+    },
+    extreme: {
+        enemyHealth: 1,
+        enemySpeed: 1,
+        enemyAttackRate: 1,
+        playerLives: 3
+    }
+}
 function getEnemyType(row, col) {
 
     if (currentWave === 1) {
@@ -147,8 +174,8 @@ function drawParticles() {
 
         ctx.globalAlpha = particle.life;
         ctx.shadowBlur = 15
-        ctx.shadowColor = "#ff245c"
-        ctx.fillStyle = "#ff6688"
+        ctx.shadowColor = particle.color || "#ff245c";
+        ctx.fillStyle = particle.color || "#ff6688";
 
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
@@ -218,7 +245,9 @@ const healthBonus = Math.floor((currentWave - 1) / 2);
             const type = ENEMY_TYPES[typeName];
 
             const health = Math.min(
-                type.health + healthBonus,
+                Math.max(1, Math.ceil(
+                    (type.health + healthBonus) * difficulty.enemyHealth
+                )),
                 15
             );
 
@@ -259,11 +288,11 @@ const healthBonus = Math.floor((currentWave - 1) / 2);
                 diveRate: type.diveRate,
                 attackPattern: type.attack,
                 bulletSpeed: type.bulletSpeed,
-                attackCooldown:
+                attackCooldown: (
                     Math.random() *
                     (type.cooldownMax - type.cooldownMin) +
-                    type.cooldownMin,
-
+                    type.cooldownMin
+                ) * difficulty.enemyAttackRate,
                 scoreValue: type.score,
 
                 
@@ -329,12 +358,14 @@ const player = {
     width: 40,
     height: 50,
     speed: 10,
-    lives: 3,
+    lives: 100,
     invulnerability: 0
 };
 
 let gameOver = false;
 
+let gameState = "menu";
+let selectedDifficulty = "extreme";
 function updateEnemyBullets() {
     enemyBullets.forEach(bullet => {
         bullet.x += bullet.vx;
@@ -353,24 +384,41 @@ function updateEnemyBullets() {
         }
     }
 }
-
 function drawEnemyBullets() {
     enemyBullets.forEach(bullet => {
         ctx.save();
 
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = "#ff245c";
-        ctx.fillStyle = "#ff245c";
+        ctx.translate(bullet.x, bullet.y);
 
-        ctx.fillRect(
-            bullet.x - bullet.width / 2,
-            bullet.y - bullet.height / 2,
-            bullet.width,
-            bullet.height
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = "#ffffff";
+
+        ctx.fillStyle = "#ffffff";
+
+        ctx.beginPath();
+        ctx.ellipse(
+            0, 0,
+            5, 8,
+            0,
+            0,
+            Math.PI * 2
         );
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(-1.5, -2, 1.2, 0, Math.PI * 2);
+        ctx.arc(1.5, 2.5, 1, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.globalAlpha = 0.8;
+
+        ctx.beginPath();
+        ctx.arc(-1.5, -4, 1.2, 0, Math.PI * 2);
+        ctx.fill();
 
         ctx.restore();
-    });
+    })
 }
 function drawPlayer() {
     ctx.save();
@@ -904,11 +952,11 @@ function updateEnemies() {
 
             const type = ENEMY_TYPES[enemy.type];
 
-            enemy.attackCooldown =
+            enemy.attackCooldown = (
                 Math.random() *
                 (type.cooldownMax - type.cooldownMin) +
                 type.cooldownMin
-
+            ) * difficulty.enemyAttackRate;
         }
 
     })
@@ -1075,7 +1123,9 @@ document.addEventListener("keyup", e => {
 function movePlayer() {
 
     if (gameOver) return;
-
+    if (weaponCooldown > 0) {
+        weaponCooldown--;
+    }
     if (player.invulnerability > 0) {
         player.invulnerability--;
     }
@@ -1116,12 +1166,22 @@ const weaponDrops = [];
 let weaponLevel = 1;
 let equippedWeapon = "red";
 
+let weaponCooldown = 0;
+
+const WEAPON_COOLDOWNS = {
+    red: 12,
+    laser: 12
+}
+
 const weapons = {
     red: {},
     laser: {}
 }
 
 function shoot() {
+    if (weaponCooldown > 0 || gameOver) return;
+
+    weaponCooldown = WEAPON_COOLDOWNS[equippedWeapon];
     const level = weaponLevel;
 
     if (equippedWeapon === "red") {
@@ -1191,11 +1251,12 @@ function fireLaser() {
         x: beamX,
         startY: beamStart,
         endY: beamEnd,
-        life: 10,
-        maxLife: 10
+        life: 5,
+        maxLife: 5
     });
 
     if (target && target.invulnerability <= 0) {
+        createLaserImpact(target.x, target.y);
         target.health -= damageByLevel[weaponLevel];
         target.hitFlash = 8;
         target.hitRecoil = 8;
@@ -1235,28 +1296,69 @@ function createLaserImpact(x, y) {
         })
     }
 }
-
-
 function drawBullets() {
     bullets.forEach(bullet => {
         ctx.save();
 
-        const isYellow = bullet.type === "laser";
+        if (bullet.type === "laser") {
+            ctx.shadowBlur = 22;
+            ctx.shadowColor = "#ffdf32";
+            ctx.fillStyle = "#ffdf32";
 
-        const color = isYellow ? "#ffdf32" : "#ff3333";
+            ctx.fillRect(
+                bullet.x - bullet.width / 2,
+                bullet.y - bullet.height / 2,
+                bullet.width,
+                bullet.height
+            );
+        }
 
-        ctx.shadowBlur = isYellow ? 22 : 15;
-        ctx.shadowColor = color;
-        ctx.fillStyle = color;
+        else {
 
-        ctx.fillRect(
-            bullet.x - bullet.width / 2,
-            bullet.y - bullet.height / 2,
-            bullet.width,
-            bullet.height
-        )
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = "#ff3030";
+            ctx.fillStyle = "#ff3030";
 
-        ctx.restore()
+            ctx.beginPath();
+            ctx.roundRect(
+                bullet.x - bullet.width / 2 - 2,
+                bullet.y - bullet.height / 2,
+                bullet.width + 4,
+                bullet.height,
+                5
+            );
+            ctx.fill();
+
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = "#ff9a38";
+            ctx.fillStyle = "#ff9a38";
+
+            ctx.beginPath();
+            ctx.roundRect(
+                bullet.x - bullet.width / 2,
+                bullet.y - bullet.height / 2 + 2,
+                bullet.width,
+                bullet.height - 4,
+                4
+            );
+            ctx.fill();
+
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "#ffffff";
+            ctx.fillStyle = "#fff3d6";
+
+            ctx.beginPath();
+            ctx.roundRect(
+                bullet.x - 1,
+                bullet.y - bullet.height / 2 + 5,
+                2,
+                bullet.height - 10,
+                2
+            );
+            ctx.fill();
+        }
+
+        ctx.restore();
     })
 }
 function updateLaserBeams() {
@@ -1389,6 +1491,95 @@ function drawWeaponDrops() {
         ctx.restore();
     })
 }
+function updateLaserImpacts() {
+    for (let i = laserImpacts.length - 1; i >= 0; i--) {
+        const impact = laserImpacts[i];
+
+        impact.life--;
+        impact.radius += 2.5;
+
+        if (impact.life <= 0) {
+            laserImpacts.splice(i, 1);
+        }
+    }
+}
+
+function drawLaserImpacts() {
+    laserImpacts.forEach(impact => {
+        const alpha = impact.life / impact.maxLife;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = "#ffdf32";
+        ctx.strokeStyle = "#fff4a3";
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+        ctx.arc(
+            impact.x,
+            impact.y,
+            impact.radius,
+            0,
+            Math.PI * 2
+        );
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowBlur = 30
+
+        ctx.beginPath();
+        ctx.arc(
+            impact.x,
+            impact.y,
+            7 * alpha,
+            0,
+            Math.PI * 2
+        );
+        ctx.fill();
+
+        ctx.restore();
+    })
+}
+
+function startGame() {
+    difficulty = DIFFICULTIES[selectedDifficulty];
+
+    gameState = "playing";
+    gameOver = false;
+
+    score = 0;
+    currentWave = 1;
+    waveState = "active";
+
+    player.lives = difficulty.playerLives;
+    player.x = WIDTH / 2;
+    player.y = HEIGHT - 100;
+    player.invulnerability = 0;
+
+    weaponLevel = 1;
+    equippedWeapon = "red";
+    weaponCooldown = 0;
+
+    enemies.length = 0;
+    bullets.length = 0;
+    enemyBullets.length = 0;
+    weaponDrops.length = 0;
+    laserBeams.length = 0;
+    laserImpacts.length = 0;
+    particles.length = 0;
+
+    formationSpeed = 3.5;
+    formationDirection = 1;
+
+    volleyCooldown = 120;
+    volleyActive = false;
+    volleyEnemies = [];
+    volleyIndex = 0;
+
+    spawnFormation();
+}
 function gameLoop() {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
     drawStars();
@@ -1398,6 +1589,8 @@ function gameLoop() {
     drawBullets();
     updateLaserBeams();
     drawLaserBeams();
+    updateLaserImpacts();
+    drawLaserImpacts();
     updateEnemyBullets();
     drawEnemyBullets();
     updateWeaponDrops();
