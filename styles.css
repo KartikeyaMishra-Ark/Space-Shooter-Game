@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Russo+One&display=swap');
 
 * {
     margin: 0;
@@ -11,129 +12,143 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #08090d;
+    background: #171714;
     overflow: hidden;
-    font-family: Arial, sans-serif;
+    font-family: 'Space Mono', monospace;
 }
 
 #gameCanvas {
-    background: #0b0d14;
-    border: 1px solid #252b40;
-    box-shadow: 0 0 30px rgba(0, 200, 255, 0.08);
+    background: #10151b;
+    border: 3px solid #e8dfc5;
+    box-shadow: 8px 8px 0 #e66b3d;
 }
-                
+
 #mainMenu {
     position: absolute;
     inset: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    background: rgba(5, 7, 15, 0.88);
+    background: rgba(15, 18, 20, 0.94);
     z-index: 10;
 }
 
 .menu-content {
     width: 600px;
     text-align: center;
-    padding: 40px;
+    padding: 35px;
+    position: relative;
 }
 
+/* GAME TITLE */
 
 h1 {
-    color: #ffffff;
-    font-size: 62px;
-    font-weight: 900;
-    letter-spacing: 3px;
-    text-shadow: 0 0 25px rgba(0, 234, 255, 0.25);
+    color: #f4e8cb;
+    font-family: 'Russo One', sans-serif;
+    font-size: 68px;
+    font-weight: 400;
+    letter-spacing: -2px;
+    transform: rotate(-2deg);
+    text-shadow: 4px 4px 0 #e66b3d;
 }
+
 h1 span {
-    color: #00eaff;
+    color: #e66b3d;
 }
 
 .description {
-    color: #9299ad;
-    font-size: 15px;
-    margin-top: 12px;
+    color: #aaa48e;
+    font-size: 12px;
+    margin-top: 20px;
+    letter-spacing: 1px;
 }
 
+/* CONTROLS */
 
 .controls {
     display: flex;
     justify-content: center;
-    gap: 35px;
-    margin: 45px 0;
+    gap: 25px;
+    margin: 40px 0;
 }
+
 .controls div {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    color: #777f96;
-    font-size: 11px;
-    letter-spacing: 2px;
+    color: #a9a18b;
+    font-size: 10px;
+    letter-spacing: 1px;
 }
+
 .control-key {
-    color: #ffffff;
+    color: #171714;
     font-size: 14px;
     font-weight: bold;
-    padding: 10px 13px;
-    border: 1px solid #30394e;
-    border-radius: 5px;
-    background: #111725;
+    padding: 12px 16px;
+    border: 2px solid #f4e8cb;
+    background: #f4e8cb;
+    box-shadow: 3px 3px 0 #e66b3d;
 }
 .section-label {
-    color: #9299ad;
-    font-size: 12px;
-    letter-spacing: 3px;
-    margin-bottom: 18px;
+    color: #e6a94e;
+    font-size: 11px;
+    letter-spacing: 2px;
+    margin-bottom: 15px;
 }
 
 .difficulty-options {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 12px;
     margin-bottom: 35px;
 }
 
 .difficulty-btn {
-    padding: 12px 18px;
-    color: #9299ad;
-    background: #111725;
-    border: 1px solid #30394e;
-    border-radius: 5px;
+    padding: 11px 20px;
+    color: #aaa48e;
+    background: transparent;
+    border: 2px solid #555346;
+    border-radius: 0;
     cursor: pointer;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
     font-weight: bold;
-    transition: 0.2s;
+    transition: 0.15s;
 }
 .difficulty-btn:hover {
-    border-color: #00eaff;
-    color: #ffffff;
+    color: #f4e8cb;
+    border-color: #e66b3d;
+    transform: translateY(-3px);
 }
 
 .difficulty-btn.selected {
-    color: #00eaff;
-    border-color: #00eaff;
-    background: rgba(0, 234, 255, 0.1);
-    box-shadow: 0 0 15px rgba(0, 234, 255, 0.12);
+    color: #171714;
+    border-color: #e6a94e;
+    background: #e6a94e;
+    box-shadow: 3px 3px 0 #e66b3d;
 }
 
 #startButton {
     width: 230px;
     padding: 16px;
-    color: #08090d;
-    background: #00eaff;
-    border: none;
-    border-radius: 5px;
-    font-size: 15px;
-    font-weight: 900;
+    color: #171714;
+    background: #e66b3d;
+    border: 2px solid #e66b3d;
+    border-radius: 0;
+    font-family: 'Russo One', sans-serif;
+    font-size: 17px;
     letter-spacing: 2px;
     cursor: pointer;
-    transition: 0.2s;
+    transition: 0.15s;
+    box-shadow: 5px 5px 0 #f4e8cb;
 }
 
 #startButton:hover {
-    background: #ffffff;
-    box-shadow: 0 0 25px rgba(0, 234, 255, 0.5);
-    transform: translateY(-2px);
+    background: #f4e8cb;
+    border-color: #f4e8cb;
+    transform: translate(3px, 3px);
+    box-shadow: 2px 2px 0 #e66b3d;
 }
 
 #mainMenu.hidden {

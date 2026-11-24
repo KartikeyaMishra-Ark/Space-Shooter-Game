@@ -173,9 +173,14 @@ function drawParticles() {
         ctx.save();
 
         ctx.globalAlpha = particle.life;
-        ctx.shadowBlur = 15
-        ctx.shadowColor = particle.color || "#ff245c";
-        ctx.fillStyle = particle.color || "#ff6688";
+        if (particle.color) {
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = particle.color;
+            ctx.fillStyle = particle.color;
+        } else {
+            const colors = ["#e66b3d", "#e6a94e", "#f4e8cb"];
+            ctx.fillStyle = colors[Math.floor(particle.radius) % colors.length]
+        }
 
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
@@ -184,45 +189,188 @@ function drawParticles() {
     })
 }
 
+function drawEnemies() {
+    enemies.forEach(enemy => {
+        drawEnemyShield(enemy);
+
+        ctx.save();
+
+        const recoil = enemy.hitRecoil > 0
+            ? Math.sin(enemy.hitRecoil * 2) * 3
+            : 0;
+
+        ctx.translate(enemy.x + recoil, enemy.y);
+
+        if (enemy.hitFlash > 0) {
+            ctx.filter = "brightness(0) invert(1)";
+        }
+
+        ctx.fillStyle = "#e66b3d";
+        ctx.strokeStyle = "#171714";
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.ellipse(-17, 0, 9, 15, -0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.ellipse(17, 0, 9, 15, 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#e6a94e";
+
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 14, 19, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(0, 9, 10, 0, Math.PI * 2);
+        ctx.fillStyle = "#f4e8cb";
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#171714";
+
+        ctx.beginPath();
+        ctx.arc(-5, 8, 3, 0, Math.PI * 2);
+        ctx.arc(5, 8, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#f4e8cb";
+
+        ctx.beginPath();
+        ctx.arc(-5.5, 7, 1, 0, Math.PI * 2);
+        ctx.arc(4.5, 7, 1, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#e66b3d";
+
+        ctx.beginPath();
+        ctx.moveTo(-5, 16);
+        ctx.lineTo(5, 16);
+        ctx.lineTo(0, 25);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#f4e8cb";
+
+        ctx.beginPath();
+        ctx.arc(-4, -17, 3, 0, Math.PI * 2);
+        ctx.arc(0, -19, 3, 0, Math.PI * 2);
+        ctx.arc(4, -17, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    })
+}
+
 function drawScore() {
     ctx.save();
 
-    ctx.font = "bold 22px Arial";
-    ctx.fillStyle = "#00eaff";
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = "#00eaff";
+    const cream = "#f4e8cb";
+    const orange = "#e66b3d";
+    const mustard = "#e6a94e";
+    const dark = "#171714";
+    const muted = "#aaa48e";
+
+    function panel(x, y, width, height, color) {
+        ctx.fillStyle = dark;
+        ctx.fillRect(x + 4, y + 4, width, height);
+
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, width, height);
+
+        ctx.strokeStyle = cream;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, width, height);
+    }
+
+    panel(20, 18, 210, 68, orange);
+
     ctx.textAlign = "left";
-    ctx.fillText(`SCORE: ${score}`, 25, 40);
+    ctx.fillStyle = dark;
+    ctx.font = "bold 11px 'Space Mono', monospace";
+    ctx.fillText("HIGH ENERGY POINTS", 32, 37);
+
+    ctx.fillStyle = cream;
+    ctx.font = "bold 25px 'Space Mono', monospace";
+    ctx.fillText(String(score).padStart(7, "0"), 32, 70);
+
+    panel(WIDTH / 2 - 75, 18, 150, 54, mustard);
 
     ctx.textAlign = "center";
-    ctx.fillText(`WAVE: ${currentWave}`, WIDTH / 2, 40);
+    ctx.fillStyle = dark;
+    ctx.font = "bold 11px 'Space Mono', monospace";
+    ctx.fillText("CURRENT WAVE", WIDTH / 2, 38);
 
-    ctx.textAlign = "right";
-    ctx.fillText(`LIVES: ${player.lives}`, WIDTH - 25, 40);
+    ctx.fillStyle = cream;
+    ctx.font = "bold 22px 'Russo One', sans-serif";
+    ctx.fillText(String(currentWave).padStart(2, "0"), WIDTH / 2, 61);
 
-    const weaponColor = equippedWeapon === "red"
-        ? "#ff3333"
-        : "#ffdf32";
-
-    ctx.fillStyle = weaponColor;
-    ctx.shadowColor = weaponColor;
+    panel(WIDTH - 230, 18, 210, 68, cream);
 
     ctx.textAlign = "left";
-    ctx.fillText(
-        `WEAPON: ${equippedWeapon.toUpperCase()}`,
-        25,
-        75
-    )
+    ctx.fillStyle = dark;
+    ctx.font = "bold 11px 'Space Mono', monospace";
+    ctx.fillText("REMAINING LIVES", WIDTH - 218, 37);
 
+    for (let i = 0; i < difficulty.playerLives; i++) {
+        const x = WIDTH - 215 + i * 35;
+        const y = 59;
+
+        ctx.fillStyle = i < player.lives ? orange : "#aaa48e";
+
+        ctx.beginPath();
+        ctx.moveTo(x, y - 8);
+        ctx.lineTo(x + 10, y + 8);
+        ctx.lineTo(x, y + 4);
+        ctx.lineTo(x - 10, y + 8);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    panel(20, HEIGHT - 65, 260, 43, cream);
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = dark;
+    ctx.font = "bold 11px 'Space Mono', monospace";
+
+    ctx.fillText("EQUIPPED:", 32, HEIGHT - 38);
+
+    const weaponColor = equippedWeapon === "red"
+        ? orange
+        : mustard;
+
+    ctx.fillStyle = weaponColor;
+    ctx.font = "bold 14px 'Russo One', sans-serif";
+
+    ctx.fillText(equippedWeapon.toUpperCase(), 125, HEIGHT - 38);
+
+    ctx.fillStyle = dark;
+    ctx.font = "bold 11px 'Space Mono', monospace";
     ctx.textAlign = "right";
-    ctx.fillText(
-        `LEVEL: ${weaponLevel}`,
-        WIDTH - 25,
-        75
-    )
+
+    ctx.fillText("POWER", WIDTH - 155, HEIGHT - 38);
+
+    for (let i = 0; i < 5; i++) {
+        ctx.fillStyle = i < weaponLevel ? orange : "#aaa48e";
+        ctx.fillRect(WIDTH - 140 + i * 20, HEIGHT - 48, 13, 20);
+    }
+
+    ctx.strokeStyle = muted;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(300, HEIGHT - 42);
+    ctx.lineTo(WIDTH - 300, HEIGHT - 42);
+    ctx.stroke();
 
     ctx.restore();
 }
+
 function spawnFormation() {
 
     const rows = 4;
@@ -333,8 +481,7 @@ function startNextWave() {
 
 }
 function drawStars() {
-    ctx.fillStyle = "#ffffff";
-
+    ctx.fillStyle = "#f4e8cb";
     stars.forEach(star => {
         ctx.globalAlpha = star.opacity
         ctx.beginPath();
@@ -423,37 +570,53 @@ function drawEnemyBullets() {
 function drawPlayer() {
     ctx.save();
     if (player.invulnerability > 0) {
-        ctx.globalAlpha = Math.floor(player.invulnerability / 8) % 2 === 0 ? 0.3 : 1;
+        ctx.globalAlpha =
+            Math.floor(player.invulnerability / 8) % 2 === 0 ? 0.3 : 1;
     }
 
     ctx.translate(player.x, player.y);
 
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = "#00eaff";
-      
     ctx.beginPath();
-    ctx.moveTo(0, -25)
-    ctx.lineTo(20, 20)
-    ctx.lineTo(0, 12)
-    ctx.lineTo(-20, 20)
-    ctx.closePath(); 
+    ctx.moveTo(0, -25);
+    ctx.lineTo(20, 20);
+    ctx.lineTo(0, 12);
+    ctx.lineTo(-20, 20);
+    ctx.closePath();
 
-    ctx.fillStyle = "#00c8ff"
+    ctx.fillStyle = "#f4e8cb";
     ctx.fill();
-
-    ctx.strokeStyle = "#a5f5ff"
-    ctx.lineWidth = 2
+    ctx.strokeStyle = "#171714";
+    ctx.lineWidth = 2.5;
     ctx.stroke();
 
-  
+    ctx.fillStyle = "#e66b3d";
+
+    ctx.beginPath();
+    ctx.moveTo(-13, 5);
+    ctx.lineTo(-20, 20);
+    ctx.lineTo(-3, 14);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(13, 5);
+    ctx.lineTo(20, 20);
+    ctx.lineTo(3, 14);
+    ctx.closePath();
+    ctx.fill();
+
     ctx.beginPath();
     ctx.ellipse(0, -5, 5, 10, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffffff"
+    ctx.fillStyle = "#e6a94e";
     ctx.fill();
+    ctx.strokeStyle = "#171714";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = "#aaa48e";
+    ctx.fillRect(-4, 17, 8, 4);
 
     ctx.restore();
 }
-
 
 let enemies = []
 let currentWave = 1;
@@ -473,117 +636,61 @@ function spawnEnemy() {
 }       
 
 
-function drawEnemyShield(enemy) {
 
+function drawEnemyShield(enemy) {
     if (enemy.invulnerability <= 0) return;
 
     ctx.save();
+    ctx.translate(enemy.x, enemy.y);
 
-    ctx.translate(enemy.x, enemy.y)
-
-    ctx.globalAlpha = Math.min(
-        enemy.invulnerability / 20,
-        0.8
-    )
-
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = "#00aaff";
+    ctx.globalAlpha = Math.min(enemy.invulnerability / 20, 0.8);
 
     ctx.beginPath();
     ctx.arc(0, 0, 27, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(230, 169, 78, 0.10)";
+    ctx.fill();
 
-    ctx.strokeStyle = "#00c8ff";
+    ctx.strokeStyle = "#e6a94e";
     ctx.lineWidth = 3;
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.arc(0, 0, 25, 0, Math.PI * 2);
-
-    ctx.fillStyle = "rgba(0, 170, 255, 0.15)";
-    ctx.fill();
-
-    ctx.shadowBlur = 10;
-    ctx.fillStyle = "#a5f3ff";
+    ctx.arc(0, 0, 22, 0, Math.PI * 2);
+    ctx.setLineDash([4, 5]);
+    ctx.strokeStyle = "#f4e8cb";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#e66b3d";
 
     ctx.beginPath();
-    ctx.arc(0, -25, 2, 0, Math.PI * 2);
-    ctx.arc(25, 0, 2, 0, Math.PI * 2);
-    ctx.arc(0, 25, 2, 0, Math.PI * 2)
-    ctx.arc(-25, 0, 2, 0, Math.PI * 2)
+    ctx.arc(0, -25, 2.5, 0, Math.PI * 2);
+    ctx.arc(25, 0, 2.5, 0, Math.PI * 2);
+    ctx.arc(0, 25, 2.5, 0, Math.PI * 2);
+    ctx.arc(-25, 0, 2.5, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
 }
 
-function drawEnemies() {
-    enemies.forEach(enemy => {
-        drawEnemyShield(enemy);
+function drawEnemyBullets() {
+    enemyBullets.forEach(bullet => {
         ctx.save();
+        ctx.translate(bullet.x, bullet.y);
 
-        const recoil = enemy.hitRecoil > 0
-            ? Math.sin(enemy.hitRecoil * 2) * 3
-            : 0;
-
-        ctx.translate(enemy.x + recoil, enemy.y);
-
-        if (enemy.hitFlash > 0) {
-            ctx.filter = "brightness(0) invert(1)";
-        }
-
-
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = "#39D353";
-
-        ctx.fillStyle = "#238B45";
+        ctx.fillStyle = "#aaa48e";
+        ctx.strokeStyle = "#171714";
+        ctx.lineWidth = 1.5;
 
         ctx.beginPath();
-        ctx.ellipse(-17, 0, 9, 15, -0.5, 0, Math.PI * 2)
+        ctx.ellipse(0, 0, 5, 8, 0, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#f4e8cb"
 
         ctx.beginPath();
-        ctx.ellipse(17, 0, 9, 15, 0.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#39D353";
-
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 14, 19, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(0, 9, 10, 0, Math.PI * 2)
-        ctx.fill();
-
-        ctx.shadowBlur = 0
-        ctx.fillStyle = "#ffffff";
-
-        ctx.beginPath();
-        ctx.arc(-5, 8, 3, 0, Math.PI * 2);
-        ctx.arc(5, 8, 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#151515"
-
-        ctx.beginPath();
-        ctx.arc(-5, 9, 1.5, 0, Math.PI * 2);
-        ctx.arc(5, 9, 1.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#FFB52E"
-
-        ctx.beginPath();
-        ctx.moveTo(-5, 16);
-        ctx.lineTo(5, 16);
-        ctx.lineTo(0, 25);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.fillStyle = "#FF4545"
-
-        ctx.beginPath();
-        ctx.arc(-4, -17, 4, 0, Math.PI * 2);
-        ctx.arc(0, -19, 4, 0, Math.PI * 2);
-        ctx.arc(4, -17, 4, 0, Math.PI * 2);
+        ctx.arc(-1.5, -3, 1.5, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();
@@ -1440,25 +1547,23 @@ function updateWeaponDrops() {
     }
 }
 
+
 function drawWeaponDrops() {
-
     weaponDrops.forEach(drop => {
-
         ctx.save();
 
         if (drop.type === "power") {
-
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = "#00aaff";
-            ctx.fillStyle = "#008cff";
+            ctx.fillStyle = "#e6a94e";
+            ctx.strokeStyle = "#171714";
+            ctx.lineWidth = 2;
 
             ctx.beginPath();
             ctx.arc(drop.x, drop.y, 12, 0, Math.PI * 2);
             ctx.fill();
+            ctx.stroke();
 
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#171714";
+            ctx.lineWidth = 2.5
 
             ctx.beginPath();
             ctx.moveTo(drop.x - 6, drop.y);
@@ -1466,18 +1571,14 @@ function drawWeaponDrops() {
             ctx.moveTo(drop.x, drop.y - 6);
             ctx.lineTo(drop.x, drop.y + 6);
             ctx.stroke();
-
-        }
-
-        else {
-
+        } else {
             const color = drop.type === "red"
                 ? "#ff3333"
                 : "#ffdf32";
 
-            ctx.shadowBlur = 18;
-            ctx.shadowColor = color;
             ctx.fillStyle = color;
+            ctx.strokeStyle = "#171714";
+            ctx.lineWidth = 2;
 
             ctx.fillRect(
                 drop.x - drop.width / 2,
@@ -1486,6 +1587,12 @@ function drawWeaponDrops() {
                 drop.height
             )
 
+            ctx.strokeRect(
+                drop.x - drop.width / 2,
+                drop.y - drop.height / 2,
+                drop.width,
+                drop.height
+            )
         }
 
         ctx.restore();
@@ -1633,11 +1740,15 @@ function gameLoop() {
         ctx.save();
 
         ctx.textAlign = "center";
-        ctx.font = "bold 36px Arial"
-        ctx.fillStyle = "#00eaff"
-        ctx.shadowBlur = 20
-        ctx.shadowColor = "#00eaff";
- 
+        ctx.font = "bold 36px 'Russo One', sans-serif";
+        ctx.fillStyle = "#e6a94e";
+        ctx.strokeStyle = "#171714";
+        ctx.lineWidth = 3;
+        ctx.strokeText(
+            `WAVE ${currentWave} CLEARED`,
+            WIDTH / 2,
+            HEIGHT / 2
+        )
         ctx.fillText(
             `WAVE ${currentWave} CLEARED`,
             WIDTH / 2,
@@ -1660,19 +1771,36 @@ function gameLoop() {
         ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
         ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-        ctx.textAlign = "center";
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = "#ff245c";
+       ctx.textAlign = "center";
 
-        ctx.fillStyle = "#ff245c";
-        ctx.font = "bold 48px Arial";
-        ctx.fillText("GAME OVER", WIDTH / 2, HEIGHT / 2);
+        ctx.fillStyle = "#171714";
+        ctx.fillRect(
+            WIDTH / 2 - 220,
+            HEIGHT / 2 - 75,
+            440,
+            150
+        )
 
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "20px Arial";
-        ctx.fillText(`FINAL SCORE: ${score}`, WIDTH / 2, HEIGHT / 2 + 45);
+        ctx.strokeStyle = "#e66b3d";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(
+            WIDTH / 2 - 220,
+            HEIGHT / 2 - 75,
+            440,
+            150
+        )
 
+        ctx.fillStyle = "#e66b3d";
+        ctx.font = "bold 48px 'Russo One', sans-serif";
+        ctx.fillText("GAME OVER", WIDTH / 2, HEIGHT / 2 - 10);
+
+        ctx.fillStyle = "#f4e8cb";
+        ctx.font = "16px 'Space Mono', monospace";
+        ctx.fillText(
+            `FINAL SCORE: ${score}`,
+            WIDTH / 2,
+            HEIGHT / 2 + 35
+        )
         ctx.restore();
     }
 
