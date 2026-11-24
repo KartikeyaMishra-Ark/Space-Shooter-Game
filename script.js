@@ -4,6 +4,190 @@ const ctx = canvas.getContext("2d");
 
 const WIDTH = canvas.width
 const HEIGHT = canvas.height;
+let audioCtx = null;
+let masterGain = null;
+let muted = false;
+let musicTimer = null;
+let musicStep = 0;
+
+function initializeAudio() {
+    if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.55;
+        masterGain.connect(audioCtx.destination);
+    }
+
+    if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+    }
+}
+
+function playTone(frequency, duration, type = "square", volume = 0.07, slideTo = null) {
+    if (!audioCtx || muted) return;
+
+    const oscillator = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    const now = audioCtx.currentTime;
+
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, now);
+
+    if (slideTo) {
+        oscillator.frequency.exponentialRampToValueAtTime(
+            slideTo,
+            now + duration
+        );
+    }
+
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.exponentialRampToValueAtTime(volume, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+    oscillator.connect(gain);
+    gain.connect(masterGain);
+
+    oscillator.start(now);
+    oscillator.stop(now + duration + 0.02);
+}
+
+function playNoise(duration, volume = 0.08) {
+    if (!audioCtx || muted) return;
+
+    const bufferSize = audioCtx.sampleRate * duration;
+    const buffer = audioCtx.createBuffer(
+        1,
+        bufferSize,
+        audioCtx.sampleRate
+    )
+
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+
+    const source = audioCtx.createBufferSource();
+    const gain = audioCtx.createGain();
+
+    source.buffer = buffer;
+
+    const now = audioCtx.currentTime;
+
+    gain.gain.setValueAtTime(volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+    source.connect(gain);
+    gain.connect(masterGain);
+
+    source.start();
+}
+
+
+function soundRedShot() {
+    playTone(240, 0.09, "square", 0.055, 110);
+}
+
+function soundLaser() {
+    playTone(880, 0.18, "sawtooth", 0.045, 150);
+    playTone(440, 0.2, "triangle", 0.035, 100);
+}
+
+function soundEnemyHit() {
+    playTone(180, 0.07, "square", 0.045, 90);
+}
+
+function soundExplosion() {
+    playNoise(0.2, 0.1);
+    playTone(120, 0.25, "sawtooth", 0.07, 40);
+}
+
+function soundPlayerHit() {
+    playTone(180, 0.25, "sawtooth", 0.09, 55);
+    playTone(90, 0.2, "square", 0.045, 40);
+}
+
+function soundPickup() {
+    playTone(520, 0.09, "square", 0.06);
+    setTimeout(() => playTone(780, 0.12, "square", 0.06), 90);
+    setTimeout(() => playTone(1040, 0.15, "square", 0.06), 180);
+}
+
+function soundWaveClear() {
+    playTone(523, 0.13, "square", 0.06);
+    setTimeout(() => playTone(659, 0.13, "square", 0.06), 140);
+    setTimeout(() => playTone(784, 0.13, "square", 0.06), 280);
+    setTimeout(() => playTone(1046, 0.3, "square", 0.07), 420);
+}
+
+function soundGameOver() {
+    playTone(440, 0.3, "square", 0.06, 330);
+    setTimeout(() => playTone(330, 0.3, "square", 0.06, 220), 300);
+    setTimeout(() => playTone(220, 0.6, "square", 0.07, 80), 600);
+}
+
+
+function startMusic() {
+    if (musicTimer !== null || muted) return;
+
+    const melody = [
+        392, 0, 392, 523,
+        587, 0, 523, 392,
+        330, 0, 330, 392,
+        523, 0, 440, 392
+    ]
+
+    const bass = [98, 98, 131, 131, 110, 110, 82, 82];
+
+    musicStep = 0;
+
+    musicTimer = setInterval(() => {
+        if (gameState !== "playing" || gameOver || muted) return;
+
+        const note = melody[musicStep % melody.length];
+
+        if (note !== 0) {
+            playTone(note, 0.14, "square", 0.035);
+        }
+
+        if (musicStep % 2 === 0) {
+            const bassNote = bass[Math.floor(musicStep / 2) % bass.length];
+            playTone(bassNote, 0.25, "triangle", 0.045);
+        }
+
+        musicStep++;
+    }, 180)
+}
+
+function stopMusic() {
+    if (musicTimer !== null) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+    }
+}
+
+function toggleMute() {
+    muted = !muted;
+
+    if (masterGain && audioCtx) {
+        masterGain.gain.setTargetAtTime(
+            muted ? 0 : 0.55,
+            audioCtx.currentTime,
+            0.03
+        );
+    }
+
+    if (muted) {
+        stopMusic();
+    } else if (gameState === "playing" && !gameOver) {
+        startMusic();
+    }
+
+    console.log(muted ? "Audio muted" : "Audio enabled");
+}
 
 const stars = [];
 let score = 0;
@@ -701,6 +885,7 @@ function damagePlayer() {
     if (player.invulnerability > 0 || gameOver) return;
 
     player.lives--;
+    soundPlayerHit();
     player.invulnerability = 90;
     weaponLevel = Math.max(1, weaponLevel - 2);
 
@@ -708,6 +893,8 @@ function damagePlayer() {
 
     if (player.lives <= 0) {
         gameOver = true;
+        stopMusic();
+        soundGameOver();
     }
 }
 function fireEnemyAttack(enemy) {
@@ -844,6 +1031,7 @@ function updateEnemies() {
     if (enemies.length === 0) {
         if (waveState === "active") {
             waveState = "transitioning";
+            soundWaveClear();
 
             setTimeout(() => {
                 startNextWave();
@@ -1121,6 +1309,7 @@ function checkCollisions() {
             if (collision) {
 
                 enemy.health-= bullet.damage || 1;
+                soundEnemyHit();
                 enemy.hitFlash = 8;
                 enemy.hitRecoil = 8;
 
@@ -1170,6 +1359,7 @@ function checkCollisions() {
                 (player.height + drop.height) / 2;
 
         if (collected) {
+            soundPickup();
 
         if (drop.type === "red") {
 
@@ -1259,6 +1449,9 @@ function movePlayer() {
 document.addEventListener("keydown", e => {
     keys[e.key.toLowerCase()] = true;
     if (e.repeat) return;
+        if (e.key.toLowerCase() === "m") {
+        toggleMute();
+    }
 
     if (e.key === " ") {
         shoot();
@@ -1289,6 +1482,9 @@ function shoot() {
     if (weaponCooldown > 0 || gameOver) return;
 
     weaponCooldown = WEAPON_COOLDOWNS[equippedWeapon];
+    if (equippedWeapon === "red") {
+        soundRedShot();
+    }
     const level = weaponLevel;
 
     if (equippedWeapon === "red") {
@@ -1331,6 +1527,7 @@ function shoot() {
 
 
 function fireLaser() {
+    soundLaser();
     const damageByLevel = [0, 3, 4, 5, 6, 8];
     const beamX = player.x;
     const beamStart = player.y - 25;
@@ -1365,12 +1562,14 @@ function fireLaser() {
     if (target && target.invulnerability <= 0) {
         createLaserImpact(target.x, target.y);
         target.health -= damageByLevel[weaponLevel];
+        soundEnemyHit();
         target.hitFlash = 8;
         target.hitRecoil = 8;
 
         if (target.health <= 0) {
             score += target.scoreValue;
             createExplosion(target.x, target.y);
+            soundExplosion();
             createWeaponDrop(target.x, target.y);
 
             const index = enemies.indexOf(target);
@@ -1651,6 +1850,8 @@ function drawLaserImpacts() {
 }
 
 function startGame() {
+    initializeAudio();
+    startMusic();
     difficulty = DIFFICULTIES[selectedDifficulty];
 
     gameState = "playing";

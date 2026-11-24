@@ -29,3 +29,6 @@ So i have done what i said i would previously though as i see i forgot to commit
 # 23-11-2026 12:59AM ~3hr 36min (29h 45min)
 
 Made the weapons more balanced by adding proper cooldowns. Made the red bullet pretty. made the enemy projectile into eggs. Next i finally went back to html and css to create a main menu for the game explaining controls. Added Difficulty settings low, medium, hard and extreme and made a menu in the start to select difficulty. the current menu is shit and has zero personality so it will be changed heavily in the future after i get done with the game mechanics. Also i will write the total logged time evey journal so i dont have to add and subtract everytime.
+
+
+# Well I found out from the orgs that i actually don't have to journal for a software project so bye bye journaling.
