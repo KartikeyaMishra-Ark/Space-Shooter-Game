@@ -45,7 +45,7 @@ It is pretty basic for now but in future updates I plan on adding custom sounds,
 
 ## Project Status
 
-Currently in development. Gameplay mechanics, visual effects, audio, and additional features are being continuously improved.
+First basic build ready to play. Gameplay mechanics, visual effects, audio, and additional features are being continuously improved.
 
 ---
 
