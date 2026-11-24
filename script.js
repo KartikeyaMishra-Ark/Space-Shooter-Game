@@ -545,13 +545,6 @@ function drawScore() {
         ctx.fillRect(WIDTH - 140 + i * 20, HEIGHT - 48, 13, 20);
     }
 
-    ctx.strokeStyle = muted;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(300, HEIGHT - 42);
-    ctx.lineTo(WIDTH - 300, HEIGHT - 42);
-    ctx.stroke();
-
     ctx.restore();
 }
 
@@ -1407,7 +1400,13 @@ function updateBullets() {
         }
     }
 }
+const gameOverMenu = document.getElementById("gameOverMenu");
+const replayButton = document.getElementById("replayButton");
 
+replayButton.addEventListener("click", () => {
+    gameOverMenu.classList.add("hidden");
+    startGame();
+})
 
 document.addEventListener("keydown", e => {
     keys[e.key.toLowerCase()] = true;
@@ -1851,11 +1850,12 @@ function drawLaserImpacts() {
 
 function startGame() {
     initializeAudio();
-    startMusic();
+    
     difficulty = DIFFICULTIES[selectedDifficulty];
 
     gameState = "playing";
     gameOver = false;
+    gameOverMenu.classList.add("hidden");
 
     score = 0;
     currentWave = 1;
@@ -1967,42 +1967,7 @@ function gameLoop() {
     drawParticles();
 
     if (gameOver) {
-        ctx.save();
-
-        ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
-        ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
-       ctx.textAlign = "center";
-
-        ctx.fillStyle = "#171714";
-        ctx.fillRect(
-            WIDTH / 2 - 220,
-            HEIGHT / 2 - 75,
-            440,
-            150
-        )
-
-        ctx.strokeStyle = "#e66b3d";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(
-            WIDTH / 2 - 220,
-            HEIGHT / 2 - 75,
-            440,
-            150
-        )
-
-        ctx.fillStyle = "#e66b3d";
-        ctx.font = "bold 48px 'Russo One', sans-serif";
-        ctx.fillText("GAME OVER", WIDTH / 2, HEIGHT / 2 - 10);
-
-        ctx.fillStyle = "#f4e8cb";
-        ctx.font = "16px 'Space Mono', monospace";
-        ctx.fillText(
-            `FINAL SCORE: ${score}`,
-            WIDTH / 2,
-            HEIGHT / 2 + 35
-        )
-        ctx.restore();
+        gameOverMenu.classList.remove("hidden");
     }
 
     requestAnimationFrame(gameLoop);

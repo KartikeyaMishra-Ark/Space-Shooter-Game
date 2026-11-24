@@ -18,9 +18,10 @@ body {
 }
 
 #gameCanvas {
+    display: block;
     background: #10151b;
     border: 3px solid #e8dfc5;
-    box-shadow: 8px 8px 0 #e66b3d;
+    box-shadow: none;
 }
 
 #mainMenu {
@@ -154,3 +155,53 @@ h1 span {
 #mainMenu.hidden {
     display: none;
 }
+#gameOverMenu {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 25px;
+    background: rgba(23, 23, 20, 0.92);
+    z-index: 20;
+}
+
+#gameOverMenu.hidden {
+    display: none;
+}
+
+#gameOverMenu .eyebrow {
+    color: #e6a94e;
+    font-size: 12px;
+    letter-spacing: 4px;
+}
+
+#gameOverMenu h2 {
+    color: #f4e8cb;
+    font-family: 'Russo One', sans-serif;
+    font-size: 65px;
+    text-shadow: 4px 4px 0 #e66b3d;
+}
+
+#replayButton {
+    width: 230px;
+    padding: 16px;
+    color: #171714;
+    background: #e66b3d;
+    border: 2px solid #e66b3d;
+    font-family: 'Russo One', sans-serif;
+    font-size: 17px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    box-shadow: 5px 5px 0 #f4e8cb;
+    transition: 0.15s;
+}
+
+#replayButton:hover {
+    background: #f4e8cb;
+    border-color: #f4e8cb;
+    transform: translate(3px, 3px);
+    box-shadow: 2px 2px 0 #e66b3d;
+}
+
