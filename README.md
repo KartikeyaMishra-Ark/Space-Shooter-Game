@@ -1,54 +1,22 @@
 # Tung Invaders
 
-First base build of a space shooter built with **HTML, CSS, and JavaScript** using the HTML Canvas API.
+Defend our solar system!!
+
+<img width="1470" height="819" alt="Screenshot 2026-11-25 at 12 40 52 AM" src="https://github.com/user-attachments/assets/cb80cc5d-9dc9-4225-9092-d27bf3696eca" />
 
 ## About
+You are a dude floating through space when suddenly you find ahh random chickens attacking you out of nowhere. Turns out they are the disciples of tung tung tung sahur, better known as triple t and are here to invade our solar system. Defeat the chickens and save our solar system. (I plan on adding a tung bossfight later)
 
-Tung Invaders is a browser-based arcade shooter inspired by classic vertical shoot-'em-up games. Fight waves of enemies, dodge incoming attacks, collect power-ups, and survive as the difficulty increases.
-It is pretty basic for now but in future updates I plan on adding custom sounds, boss fights and a lot more updates
+## How to play
 
-## Features
-
-- FUN gameplay
-- Multiple enemy types and attack patterns
-- Wave-based progression
-- Player lives and difficulty settings
-- Multiple weapons and power-ups
-- Enemy projectiles and collision detection
-- Particle effects and explosions
-- Background music and sound effects
-- Score tracking
-- Game-over screen with replay functionality
-
-## Controls
-
-| Key | Action |
-|---|---|
-| `W` / `↑` | Move up |
-| `A` / `←` | Move left |
-| `S` / `↓` | Move down |
-| `D` / `→` | Move right |
-| `Space` | Shoot |
-| `M` | Toggle sound |
+- Use arrow keys or wasd to move
+- Spacebar to shoot
+- Red weapon is a spread with less damage and yellow is concentrated single line attack.
+- Both weapons go up to level 5 and share the same power bar. pick up the powerup with the plus sign to increase damage.
+- the yellow box and red box serve to just switch weapons.
+- getting hit reduces one life and reduces two power levels of the weapon so dodge the eggs.
+- learn the patterns of the four different types of enemies.
 
 ## DEMO
 
 <a href="https://kartikeyamishra-ark.github.io/Space-Shooter-Game/">PLAY THE GAME!!!</a>
-
-## Built With
-
-- **HTML5** – Game structure
-- **CSS3** – Interface and styling
-- **JavaScript** – Game logic and mechanics
-- **HTML Canvas API** – Rendering and animation
-- **Web Audio API** – Sound effects and music
-
-## Project Status
-
-First basic build ready to play. Gameplay mechanics, visual effects, audio, and additional features are being continuously improved.
-
----
-
-## AI declaration
-
-AI has been used to explain new concepts to me as well as to fix bugs. 
