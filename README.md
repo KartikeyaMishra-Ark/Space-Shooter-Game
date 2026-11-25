@@ -5,7 +5,7 @@ Defend our solar system!!
 <img width="1470" height="819" alt="Screenshot 2026-11-25 at 12 40 52 AM" src="https://github.com/user-attachments/assets/cb80cc5d-9dc9-4225-9092-d27bf3696eca" />
 
 ## About
-You are a dude floating through space when suddenly you find ahh random chickens attacking you out of nowhere. Turns out they are the disciples of tung tung tung sahur, better known as triple t and are here to invade our solar system. Defeat the chickens and save our solar system. (I plan on adding a tung bossfight later)
+You are a dude floating through space when suddenly you find random chickens attacking you out of nowhere. Turns out they are the disciples of tung tung tung sahur, better known as triple t and are here to invade our solar system. Defeat the chickens and save our solar system. (I plan on adding a tung bossfight later)
 
 ## How to play
 
